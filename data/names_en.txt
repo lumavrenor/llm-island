@@ -1,0 +1,192 @@
+# 住人の名前の候補・英語版（[locale] lang = "en" のとき gen_personas.py が world.seed でここから npc_count 体分を選ぶ）
+# Candidate resident names for the English version (one per line; text after # is ignored).
+#
+# names.txt と同じく、LLM に考えさせずに Claude Code が作って確かめた造語だけを使う（2026-10-13）。
+# 選んだ基準:
+# - 2〜3 音節・4〜6 文字のローマ字の造語。英単語（約 37 万語の辞書）、実在の人名・姓（英語圏ほか約 11 万件）、
+#   ポケモンの名前、よく使う英単語（上位 2 万語のうち 4 文字以上）をそのまま含むもの、
+#   英語の悪口・下ネタ・差別語（3 文字以上の部分文字列で照合）を含むものは外した
+# - 目で見て、次に当たるものも外した:
+#   - ブランド・薬の名前に聞こえるもの（-x で終わるものはすべて）、実在の姓（Kozol など）
+#   - ほかの言語の俗語・罵倒語に聞こえるもの（ロシア語・ポルトガル語・トルコ語・アラビア語など。Kozol / Borola / Yibosh など）
+#   - 宗教・政治を連想させるもの（Alilam / Lebama など）
+#   - 日本語の単語やブランドに聞こえるもの（Fuzoka / Nisumo / Lesupo など）
+#   （2026-10-13 に別の Claude のレビューで 16 名、見直しで 3 名を外した。
+#    2026-10-14 の公開前の確認で、実在の人名・地名 Yenok / Birur / Abilan と、マレー語でサルを指し悪口にも使う Beruk を外した）
+# - 名前どうしで同じもの・一方がもう一方を含むもの（大文字小文字を区別しない）や、1 文字違いで紛らわしいものはない
+#   （噂の伝播をセリフ中の名前で追うため。読み込み時にも確かめる）
+# - 場所の名前・悪の魔物の名前（config.toml の en）とも重ならない
+# 足すときは同じ基準で。1 行 1 名、# から後は無視する
+Patepu
+Kunebo
+Nolok
+Kipofa
+Zikosh
+Kolawo
+Tefas
+Loniba
+Eripim
+Nawes
+Keyosh
+Tukepi
+Vukos
+Lapowo
+Pomoso
+Kupipo
+Zevor
+Nimavi
+Musupa
+Wovim
+Vabal
+Pobiyo
+Senasu
+Pibuma
+Ipesh
+Zarum
+Tapawi
+Yobote
+Tovimo
+Emoku
+Womush
+Kinupe
+Tovebe
+Wosuk
+Rubir
+Ovozuk
+Punok
+Mifufo
+Pazush
+Vopan
+Okewol
+Luvesh
+Orelok
+Muzusa
+Subemu
+Ruyish
+Rupefu
+Zuvan
+Omelum
+Mepos
+Wivin
+Vimeri
+Semeza
+Rofon
+Kolil
+Niwaso
+Lirok
+Leyaku
+Takapi
+Tipoba
+Tofal
+Bivoso
+Bevosh
+Yavir
+Rapoki
+Efelim
+Onuyus
+Wupol
+Tipoyu
+Uletul
+Muvek
+Temozu
+Larilo
+Misiwu
+Zufol
+Movash
+Rilumu
+Kurela
+Afanel
+Elikom
+Yarofo
+Tupema
+Ebozuk
+Osizal
+Pamik
+Nekinu
+Awitu
+Ovito
+Buvafu
+Fayiko
+Lazosh
+Punori
+Aluti
+Povawe
+Nukopo
+Rozul
+Popata
+Veyizi
+Nupin
+Kolepo
+Mokuki
+Bulewi
+Oyepun
+Pokovi
+Lesufi
+Lopoli
+Nusor
+Ruzok
+Yikos
+Kuboni
+Latipa
+Zerese
+Iliwin
+Teyom
+Vubole
+Zitibe
+Kevutu
+Folosh
+Lovire
+Okir
+Yinen
+Emalo
+Povor
+Sayomo
+Labefi
+Pomolu
+Ikolir
+Rinum
+Yipur
+Kunizu
+Yapun
+Yurus
+Zupinu
+Kemune
+Yimil
+Upepi
+Orizul
+Fezak
+Sulosh
+Renizu
+Utozul
+Beleke
+Mekuwu
+Mepeku
+Lopum
+Fepase
+Tilufo
+Mafani
+Bomupo
+Zisinu
+Viyesh
+Esiwu
+Pelivi
+Abubi
+Tuvowa
+Kisuyi
+Pinuyi
+Umoso
+Zitala
+Lirosh
+Nomumo
+Tokopi
+Ukema
+Rutoko
+Ikizo
+Bakosu
+Relewa
+Sotar
+Iyeker
+Moyoni
+Tekol
+Bazipe
+Zesil

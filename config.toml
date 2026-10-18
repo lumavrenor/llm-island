@@ -1,0 +1,256 @@
+# llm-island — 設定（全項目必須。コード側に既定値は持たない）
+#
+# 言語で変わる値は { ja = ..., en = ... } と書く（読み込むときに [locale] lang の方が使われる）
+
+[locale]
+# 住人が話す言語（プロンプト・住人の名前・場所の名前・画面の文字）。"ja" / "en"
+# 住人の性格と記憶は作ったときの言語で書かれているので、DB は言語ごとに別のファイル（[world] db_file）。
+# 初めて切り替えたときは、その言語の DB に python tools/gen_personas.py で住人を作ってから起動する
+lang = "ja"
+
+[llm]
+# "sglang" = 実 LLM（OpenAI 互換 API）/ "stub" = LLM なし（ダミーの返答。配管の確認用）
+mode = "sglang"
+# OpenAI 互換 API の推論サーバー（SGLang を想定）。"localhost" は初回接続が IPv6 で遅れるので IPv4 直指定
+base_url = "http://127.0.0.1:30000"
+model = "npc"                 # サーバーの --served-model-name
+api_key = ""                  # サーバーを API キー付きで起動したときだけ
+max_concurrency = 100         # 1 ウェーブの中で同時に飛ばす上限。サーバー（PP3）は 48 件を同時処理し、残りは待ち行列（192 件まで）で待つ
+timeout_sec = 90              # 1 リクエストの打ち切り（ウェーブはいちばん遅い 1 件を待つので長くしすぎない）
+retries = 1                   # 503 / 接続エラー / タイムアウト時の再試行回数
+temperature = 0.8
+
+[stub]
+# スタブの疑似レイテンシ（1 件ごとにこの間の乱数）。ウェーブの待ちはいちばん遅い 1 件で決まるので、ほぼ max になる。
+# 実 LLM に合わせておく（2026-10-11 の SGLang 30 分実行で、ウェーブの待ちは中央値 12 秒）
+min_latency_sec = 2.0
+max_latency_sec = 12.0
+
+[wave]
+# LLM リクエストは「ウェーブ」単位：全員分を一度に投げる → 全部返る → 再生 → 次のウェーブ
+min_play_sec = 3.0            # 再生フェーズ（ふきだしを見せる時間）の最短
+max_play_sec = 8.0            # 同・最長
+play_sec_per_char = { ja = 0.08, en = 0.04 }   # いちばん長いセリフ 1 文字あたりの再生秒数
+min_batch = 8                 # これ未満しか集まらないときは max_collect_sec まで待って集める
+max_collect_sec = 2.0
+
+[world]
+size = 160                    # フィールドの一辺 [m]（原点中心の正方形）
+npc_count = 100
+seed = 1
+names_file = { ja = "data/names.txt", en = "data/names_en.txt" }   # 住人の名前の候補（gen_personas.py がここから選ぶ。npc_count 以上の数が要る）
+db_file = { ja = "save/world.db", en = "save/world_en.db" }         # 住人・記憶・世界の状態（main.py などの --db の既定）
+
+# kind = "solace"（これの半径の中にいる間、心と HP が回復する）/ "place"（目的地）
+# 名前は住人の名前（names_file）と、一方がもう一方を含まないこと（gen_personas.py が確かめる）
+spots = [
+  { name = { ja = "サイン波の塔・0°",   en = "Sine Tower 0°" }, x = -50, z = -45, radius = 6,  kind = "solace" },
+  { name = { ja = "サイン波の塔・90°",   en = "Sine Tower 90°" }, x =  55, z = -30, radius = 6,  kind = "solace" },
+  { name = { ja = "サイン波の塔・180°",   en = "Sine Tower 180°" }, x =   0, z =  62, radius = 6,  kind = "solace" },
+  { name = { ja = "乱数の泉",        en = "Random Spring" },     x = -35, z =  20, radius = 10, kind = "place" },
+  { name = { ja = "ルート広場",      en = "Root Plaza" },        x =   0, z =   0, radius = 14, kind = "place" },
+  { name = { ja = "ヌルの淵",        en = "Null Abyss" },        x =  60, z =  45, radius = 10, kind = "place" },
+  { name = { ja = "マウントの丘",     en = "Mount Hill" },          x = -62, z =  60, radius = 9,  kind = "place" },
+  { name = { ja = "ディレクトリの森", en = "Directory Woods" },   x = -60, z =  -5, radius = 12, kind = "place" },
+  { name = { ja = "コアダンプ遺跡",   en = "Core Dump Ruins" },   x =  30, z = -62, radius = 10, kind = "place" },
+]
+
+[move]
+speed_slow = 1.2              # [m/s]
+speed_normal = 2.2
+speed_fast = 3.6
+sight = 18                    # seek で相手を「見つけた」とみなす距離 [m]
+separation = 1.2              # これより近いと押し合って離れる [m]
+
+[encounter]
+radius = 3.0                  # 遭遇距離 R [m]
+base_chance = 0.25            # 出会ったときに会話を始める確率（社交性 0 のとき）
+social_chance = 0.05          # 社交性 1 点あたりの上乗せ（2 体の平均）
+cooldown_sec = 240            # 会話したペアが次に話せるまで
+miss_cooldown_sec = 25        # 確率で会話しなかったペアの再判定まで
+max_turns = 6                 # 1 会話の最大発話数（往復ではなく発話の数）
+
+[npc]
+# 2026-10-13: 電力（バッテリー・充電塔・電力の受け渡し）を廃止して、HP・心・状態異常にした。
+# HP が減るのはヤミゴーストの攻撃だけ。0 になると「フリーズ」して動けなくなり、ヒーラーの癒しだけが解く。
+# 心はヤミゴーストの攻撃・ノイズ・目の前でのフリーズで減り、solace（spots の kind = "solace"）と励ましで回復する。
+max_hp = 100
+max_heart = 100               # 心の最大
+start_heart_min = 60          # 新しい世界での心の初期値（この間の乱数）
+start_heart_max = 100
+hp_regen = 0.03               # 何もしなくても HP が戻る速さ [/秒]（フリーズ中は戻らない）。60 戻るのに約 33 分
+heart_low_thresholds = [50, 25]   # 心がこれを下回ったら移動意図を聞き直す
+fear_heart = 30               # 心がこれ未満の間、状態異常「おびえ」になる（これ以上に戻ったら治る）
+noise_sec = 20                # ヤミゴーストの攻撃を受けてから、状態異常「ノイズ」が続く秒数（受けるたびに延びる）
+noise_heart_drain = 0.5       # ノイズの間、心が減る速さ [/秒]
+witness_radius = 18           # 住人がこの距離でフリーズしたのを見た住人は、心が減る [m]
+witness_heart = 8             # その量
+cheer_heart = 8               # 会話で励まされたときに回復する心
+rescue_radius = 4.0           # フリーズした住人にこの距離までヒーラーが近づいたら、癒すかどうかの判断
+rescue_cooldown_sec = 90      # 同じ相手の救助判断をやり直すまで
+
+[solace]
+# spots の kind = "solace"。半径の中にいる間、回復する。定員はない
+heart_rate = 2.0              # 心の回復 [/秒]
+hp_rate = 0.5                 # HP の回復 [/秒]（hp_regen に足す）
+rest_max_sec = 60             # 塔に着いたら、心が満ちるまで（最長この秒数）そのまま休む
+
+[raider]
+# 悪の魔物（sim/raid.py）。誰を狙うか・いつ去るかは LLM が決める（リクエスト種別 raider。1 ウェーブに 1 件）。
+# 追いかける・攻撃する・反撃する・去るのはプログラム。住人が逃げるか戦うかは住人の LLM が決める。
+# 時間はすべて世界の時刻 [秒]
+name = { ja = "ヤミゴースト", en = "Gloomwraith" }
+first_delay_sec = 240         # 起動してから最初に現れるまで
+interval_min_sec = 420        # 去って（倒されて）から次に現れるまで
+interval_max_sec = 720
+appear_sec = 2.0              # 島の端に現れてから動き出すまで（せり上がる演出）
+defeated_sec = 4.0            # 倒れてから消えるまで
+max_stay_sec = 300            # LLM が去ると決めなくても、これだけたったら去る
+max_hp = 100                  # ヤミゴーストの HP（戦士の超能力 1 発で [warrior] attack_damage 減る）
+victims = 12                  # 何体フリーズさせたら満腹で去るか（LLM には「あと何体で満腹」と伝える。その前に去るかは LLM が決める）
+speed = 2.8                   # [m/s]。住人の normal（2.2）より速く fast（3.6）より遅い（プロンプトの「急げば引き離せる」）
+reach = 2.0                   # 爪が届く距離 [m]
+# 爪の一撃（狙った住人に届いている間、strike_cooldown_sec ごと）。普通の住人は 3 発でフリーズする。
+# フリーズさせたら被害 1 体と数え、次にどうするかを LLM に聞く
+strike_damage = 34            # HP へのダメージ（戦士は [warrior] defense の分だけ減る）
+strike_heart = 15             # 心へのダメージ
+strike_cooldown_sec = 1.5
+# 反撃：撃ってきた戦士（aggro_sec 以内）のうち、届くいちばん近い 1 体へ黒い弾を撃つ
+counter_range = 16            # [m]（戦士の attack_range より長い）
+counter_cooldown_sec = 2.5
+counter_hit_chance = 0.6
+counter_damage = 20           # HP へのダメージ（defense の前。戦士には 8）
+counter_heart = 5
+give_up_sec = 12              # 追いかけても届かないまま、これだけたったら諦める（その襲来では狙わない）
+aggro_sec = 8                 # 撃ってきた戦士を「攻撃してきた戦士」として LLM の状況の文に載せる時間
+think_every_sec = 25          # 考え直すきっかけ（獲物をフリーズさせた・逃げられた・撃たれた等）が無くても、これだけたったら考え直す
+candidates = 10               # LLM の状況の文に載せる住人の数（近い順）
+prowl_speed = 1.2             # 狙う相手が決まっていない（LLM の返答待ち）間、島の中央へ漂う速さ [m/s]
+alert_radius = 35             # これより近づかれた住人は悪に気づく（戦士は現れた時点で島のどこにいても気づく）
+safe_distance = 45            # flee（逃げる）はこれだけ離れたら終わり
+size_ratio = 1.5              # 住人（[look] scale）に対する大きさ
+
+[warrior]
+# 戦士（剣と超能力で悪と戦える住人）。fight の意図のあいだ、射程に入ったら自動で撃つ。
+# 撃つと悪の反撃（[raider] counter_*）の的になる
+count = 5                     # 戦士の人数（world.seed で 100 体の中から選ぶ）
+defense = 0.6                 # 悪から受ける HP ダメージを何割減らすか（爪 34 → 13.6、反撃 20 → 8）
+attack_range = 12             # 超能力が届く距離 [m]
+attack_cooldown_sec = 5.0     # 1 体が撃つ間隔
+hit_chance = 0.35             # 当たる確率
+attack_damage = 10            # 当たったときに悪の HP を削る量
+
+[healer]
+# ヒーラー（魔法の杖で、フリーズした住人を HP 100% で目覚めさせられる住人）。戦士以外から world.seed で選ぶ。
+# どのフリーズ住人のところへ行くか（意図 rescue の target）と、着いて癒すかどうか（rescue リクエスト）は LLM が決める。
+# 癒すと決めたら cast_sec のあいだ杖を掲げて詠唱する（その間は動けない。悪に狙われることもある）
+count = 3
+cast_sec = 3.0                # 詠唱の秒数（世界の時刻）
+revive_heart = 40             # 目覚めた住人の心がこれより低ければ、ここまで戻す
+listed = 6                    # ヒーラーの状況の文に載せるフリーズ住人の数（近い順。島のどこでフリーズしても気配で分かる）
+
+[memory]
+recent_events = 3             # 注入する「自分の最近の出来事」の件数
+partner_events = 3            # 注入する「相手が関わった最近の出来事」の件数
+heard_events = 2              # 注入する「聞いた話（救助）」の件数
+dialogue_turns = 6            # プロンプトに入れる会話の直近発話数
+# 噂（beliefs。会話の要約が「相手が話したほかの住人・場所の話」を取り出す）。移動意図（intent）には入れない
+heard_max = 2                 # 1 回の要約で取り出す噂の最大数
+rumors_about = 2              # ペア記憶に入れる「相手について聞いた噂」の件数（初対面でも入る）
+heard_rumors = 3              # 会話（say）に入れる「噂で聞いた話」の件数（相手以外の住人・場所。about ごとに最新 1 件）
+known_others = 3              # 会話（say）に入れる「ほかの住人についての自分の印象」の件数（噂の元になる）
+thoughts = true               # 要約の前の振り返り（summary_thought）を、ペア記憶と「ほかの住人の印象」に入れる（false で入れない）
+gossip = true                 # 会話（say）の指示に「ほかの住人のうわさ話をしてもいい」の一行を入れる（false で入れない。2026-10-13 夕方に追加）
+
+[viewer]
+bubble_distance = 55          # ふきだしを出すカメラからの距離 [m]
+bubble_sec = 5.0
+show_inner_voice = true       # 移動意図の manner を「心の声」で出す（V キーで切替）
+director_hold_min = 8.0
+director_hold_max = 15.0
+manual_idle_sec = 20.0        # 手動操作がこの秒数なければ自動カメラに戻る
+drag_threshold = 0.01         # 左ボタンを押してからこれ以上（画面の高さ比）動いたらドラッグ（それ未満はクリック＝追従）
+window_size = [1600, 900]     # 初回（保存した位置・サイズが無いとき）のウィンドウの大きさ
+remember_window = true        # 終了時のウィンドウ位置・サイズを保存し、次回その位置・サイズで開く
+window_state_path = "save/window.json"   # 保存先（プロジェクトからの相対パス）
+
+[audio]
+# 音（viewer/sound.py）。M キーで消音／戻す
+bgm_dir = "assets/bgm"        # BGM のフォルダ（llm-radio-daemon の自作曲。毎巡シャッフルして順に流す）
+bgm_volume = 0.35             # 0 で BGM なし
+bgm_fade_sec = 3.0            # 曲の頭と終わりのフェード
+bgm_gap_sec = 2.0             # 曲と曲の間
+sfx_dir = "assets/sfx"        # 効果音（python tools/gen_sfx.py で合成して作る）
+sfx_volume = 0.8
+near = 30                     # カメラからこの距離 [m] までは最大の音量
+far = 75                      # この距離より遠い出来事は鳴らさない（その間は距離の 2 乗で小さくなる）
+pan = 0.8                     # 画面の左右に合わせて左右に振る強さ（0〜1）
+voices = 4                    # 1 つの効果音を同時に重ねられる数
+max_per_frame = 4             # 同じフレームに同じ音が来たとき、近い順に鳴らす数
+pitch_jitter = 0.04           # 再生速度（音の高さ）のゆらぎ
+say_pitch = [0.8, 1.3]        # 会話のピポッの高さ（住人ごとにこの範囲で決まる）
+
+[audio.sfx]
+# 出来事ごとの音。gain=音量、reach=near・far にかける倍率、jitter=同じフレームに重なったときにばらす秒数
+say             = { gain = 0.22, reach = 0.8, jitter = 0.9 }    # 発話（ピポッ）
+cheer           = { gain = 0.45, reach = 1.0, jitter = 0.4 }    # 励まし
+cast_start      = { gain = 0.5,  reach = 1.0, jitter = 0.2 }    # ヒーラーの詠唱
+heal            = { gain = 0.65, reach = 1.2, jitter = 0.2 }    # フリーズが解けた
+frozen          = { gain = 0.6,  reach = 1.2, jitter = 0.2 }    # フリーズした
+attack          = { gain = 0.4,  reach = 1.0, jitter = 0.15 }   # 戦士の超能力
+raider_counter  = { gain = 0.45, reach = 1.0, jitter = 0.15 }   # 悪の反撃の弾
+raider_strike   = { gain = 0.55, reach = 1.0, jitter = 0.15 }   # 悪の爪
+raider_appear   = { gain = 0.7,  reach = 2.0, jitter = 0.0 }    # 悪の襲来（遠くでも少し聞こえる）
+raider_defeated = { gain = 0.7,  reach = 1.6, jitter = 0.0 }    # 悪を倒した
+raider_gone     = { gain = 0.5,  reach = 1.6, jitter = 0.0 }    # 悪が去った
+
+[look]
+# 住人の見た目（viewer/looks.py）。llm-radio-daemon のクレイ風キャラを移植したもの。
+# 既定は乱数（種は world.seed と住人の id なので、毎回同じ住人は同じ見た目）。
+# 色は OKLCH（L=明度・C=彩度・H=色相）のトーン段に載せ、色相だけを個性にする。
+scale = 0.8                   # キャラの大きさ（scale 1 で身長およそ 2.2 m）
+skin_color = "#d1d1d1"        # 肌（全員共通。L=0.86 のグレー。服・髪の淡段をこれより明るくしないこと）
+hair_lightness = [0.22, 0.35, 0.52, 0.72]   # 髪の明度（黒 / 濃 / 中 / 淡）
+hair_chroma = 0.070
+hair_gray_chance = 0.12       # 無彩色（白・灰・黒）の髪になる確率
+gray_chroma = 0.012           # 無彩色のときの彩度
+eye_lightness = 0.30          # 目（色相は髪と同じ）
+eye_chroma = 0.045
+clothing_lightness = [0.50, 0.72]           # 服の明度（濃 / 淡）
+clothing_chroma = [0.095, 0.050]            # 服の彩度（鮮 / 淡）
+# 髪型: bob（ボブ）/ bear_buns（熊ダンゴ）/ blunt_bangs（前髪パッツン）/ cap（浅い短髪）
+#       medium（ミディアム）/ medium_twintail（ツインテール）。同じ名前を重ねると出やすくなる
+hair_styles = ["bob", "bear_buns", "blunt_bangs", "cap", "medium", "medium_twintail"]
+body_styles = ["dress", "box"]              # dress（ワンピース）/ box（箱型）
+accessory_chance = 0.45       # 装飾品をひとつ着ける確率
+# 装飾品: pin（ヘアピン）/ hairband（カチューシャ）/ cat_ears（猫耳）/ headphones（ヘッドホン）
+accessories = ["pin", "pin", "hairband", "cat_ears", "headphones"]
+
+# 個別の上書き。id か name で住人を指定し、書いた項目だけ乱数の見た目を上書きする。
+# キーは llm-radio-daemon の [[cast]] と同じ（model / hair_style / body_style / hair_color /
+# eye_color / clothing_color / accessory）。model = "girl"（ボブ・ワンピース）/ "boy"（短髪・箱型）。
+# accessory を書くと乱数の装飾品は消える（accessory = [] で何も着けない）。
+# accessory の color 省略時は髪色（headphones は暗い灰色）、side は "left" / "right" / "both"。
+#
+# [[look.npc]]
+# id = 0
+# hair_style = "medium_twintail"
+# hair_color = "#a57262"
+# eye_color = "#41261d"
+# clothing_color = "#7cb0ac"
+#
+# [[look.npc]]
+# name = "ミナト"
+# model = "girl"
+# hair_color = "#562f12"
+# clothing_color = "#c89d53"
+# accessory = [
+#   { type = "pin", color = "#c89d53", side = "right" },
+#   { type = "cat_ears" },
+# ]
+
+[log]
+dir = "log"
+metrics_every_sec = 10.0      # 世界の状態（フリーズ数など）をログに出す間隔
+prompt_npc = 0                # この ID の NPC のプロンプトと返答を log/prompts.txt に出す（起動時に消す）。-1 で出さない
+prompt_raider = true          # 悪の魔物のプロンプトと返答も log/prompts.txt に出す

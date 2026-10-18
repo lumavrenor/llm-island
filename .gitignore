@@ -1,0 +1,24 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 実行時に生成されるもの
+log/
+save/
+*.db-journal
+png/
+
+# エディタ / OS
+.vscode/
+.idea/
+.claude/settings.local.json
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ローカルの秘密情報
+.env
+*.local.toml

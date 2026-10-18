@@ -1,0 +1,8 @@
+*.sh text eol=lf
+*.bat text eol=crlf
+
+# バイナリは明示しておく（git の自動判定に任せても大抵は正しいが、事故を避ける）
+*.ogg binary
+*.wav binary
+*.png binary
+*.jpg binary
