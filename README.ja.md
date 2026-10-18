@@ -7,6 +7,10 @@
 戦ったり、フリーズした仲間を助けに行ったりします。何を話し、どこへ行き、誰を助けるかは、
 すべて住人それぞれの LLM が決めます。
 
+[![llm-island のデモ動画（YouTube）](https://img.youtube.com/vi/LGSwWh7aHrw/hqdefault.jpg)](https://www.youtube.com/watch?v=LGSwWh7aHrw)
+
+▶ デモ動画（YouTube）: https://www.youtube.com/watch?v=LGSwWh7aHrw
+
 これは個人の趣味のプロジェクトです。質問や要望には対応していません。
 ただし、権利・ライセンス上の懸念や問題のご報告は GitHub の Issues で歓迎します。
 

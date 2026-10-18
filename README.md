@@ -9,6 +9,10 @@ from beyond the island. The residents run from it, fight it, or go to rescue
 friends it has frozen. What each resident says, where they go, and who they
 help is decided by that resident's own LLM calls.
 
+[![llm-island demo video (YouTube)](https://img.youtube.com/vi/LGSwWh7aHrw/hqdefault.jpg)](https://www.youtube.com/watch?v=LGSwWh7aHrw)
+
+▶ Demo video (YouTube): https://www.youtube.com/watch?v=LGSwWh7aHrw
+
 This is a personal hobby project. I don't respond to questions or requests.
 However, reports of rights/licensing concerns or problems are welcome via GitHub Issues.
 
